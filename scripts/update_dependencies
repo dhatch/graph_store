@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+
+pushd `dirname $0` > /dev/null
+SCRIPTPATH=`pwd`
+popd > /dev/null
+
+set -ev
+
+git clone --depth=1 --branch=6.5 git@github.com:cesanta/mongoose.git $SCRIPTPATH/lib/mongoose
+rm -rf !$/.git
