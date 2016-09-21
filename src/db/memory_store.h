@@ -55,7 +55,7 @@ public:
     /**
      * Find the neighbors of 'nodeId'.
      */
-    //StatusWith<NodeList> getNeighbors(NodeId nodeId) const;
+    StatusWith<NodeIdList> getNeighbors(NodeId nodeId) const;
 
     /**
      * Find the shortest path between 'nodeAId' and 'nodeBId'.

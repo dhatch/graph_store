@@ -41,4 +41,4 @@ private:
     std::unordered_set<Node*> _edges;
 };
 
-using NodeList = std::vector<Node>;
+using NodeIdList = std::vector<NodeId>;

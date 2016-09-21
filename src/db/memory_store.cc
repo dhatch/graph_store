@@ -117,3 +117,19 @@ Status MemoryStore::removeEdge(NodeId nodeAId, NodeId nodeBId) {
 
     return StatusCode::SUCCESS;
 }
+
+StatusWith<NodeIdList> MemoryStore::getNeighbors(NodeId nodeId) const {
+    auto status_with_node = findNode(nodeId);
+    if (!status_with_node) {
+        return status_with_node.getCode();
+    }
+
+    const Node* node = *status_with_node;
+
+    NodeIdList result;
+    for (const Node* n : node->edges()) {
+        result.push_back(n->getId());
+    }
+
+    return result;
+}

@@ -85,10 +85,37 @@ TEST(MemoryStoreRemoveEdge) {
     END;
 }
 
+TEST(MemoryStoreGetNeighbors) {
+    MemoryStore store;
+
+    EXPECT_TRUE(store.addNode(1));
+    EXPECT_TRUE(store.addNode(2));
+    EXPECT_TRUE(store.addNode(3));
+
+    EXPECT_TRUE(store.addEdge(1, 2));
+    EXPECT_TRUE(store.addEdge(2, 3));
+
+    auto status_with_edges = store.getNeighbors(1);
+    EXPECT_TRUE(status_with_edges);
+    NodeIdList edges = *status_with_edges;
+    EXPECT_TRUE(std::find(edges.begin(), edges.end(), 2) != edges.end());
+    EXPECT_EQ(edges.size(), 1);
+
+    status_with_edges = store.getNeighbors(2);
+    EXPECT_TRUE(status_with_edges);
+    edges = *status_with_edges;
+    EXPECT_TRUE(std::find(edges.begin(), edges.end(), 1) != edges.end());
+    EXPECT_TRUE(std::find(edges.begin(), edges.end(), 3) != edges.end());
+    EXPECT_EQ(edges.size(), 2);
+
+    END;
+}
+
 int main() {
     MemoryStoreAddNode();
     MemoryStoreRemoveNode();
     MemoryStoreFindNode();
     MemoryStoreAddEdge();
     MemoryStoreRemoveEdge();
+    MemoryStoreGetNeighbors();
 }

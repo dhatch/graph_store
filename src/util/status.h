@@ -53,7 +53,7 @@ public:
         return code;
     }
 
-private:
+protected:
     StatusCode code;
 };
 
@@ -62,7 +62,33 @@ public:
     /**
      * Create a successful status, with the result 'result'
      */
-    StatusWith(T result) : Status(StatusCode::SUCCESS), result(result) {}
+    StatusWith(T result) : Status(StatusCode::SUCCESS), result(result), empty(false) {}
+
+    StatusWith(const StatusWith& other) : Status(other.getCode()) {
+        if (other.empty) {
+            return;
+        }
+
+        result = other.result;
+        empty = false;
+    }
+
+    StatusWith& operator=(const StatusWith& other) {
+        empty = other.empty;
+
+        if (!empty) {
+            result = other.result;
+        }
+
+        code = other.getCode();
+        return *this;
+    }
+
+    ~StatusWith() {
+        if (!empty) {
+            result.~T();
+        }
+    }
 
     /**
      * Create a non-successful status, with no result.
@@ -90,4 +116,5 @@ private:
          */
         char __dummy[sizeof(T)];
     };
+    bool empty = true;
 };
