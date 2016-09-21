@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include "src/util/assert.h"
+#include "util/assert.h"
 
 /**
  * Possible return status codes.
  */
-enum class StatusCodes {
+enum class StatusCode {
     /**
      * The operation was successful.
      */
@@ -28,7 +28,12 @@ enum class StatusCodes {
     /**
      * The requested resource does not exist.
      */
-    DOES_NOT_EXIST
+    DOES_NOT_EXIST,
+
+    /**
+     * Invalid operation.
+     */
+    INVALID
 };
 
 class Status {
@@ -37,22 +42,27 @@ public:
     Status(StatusCode code): code(code) {};
 
     operator bool() const {
-        return code == StatusCodes::SUCCESS;
-    };
+        return code == StatusCode::SUCCESS;
+    }
 
-    StatusCode getCode() {
+    bool operator==(const Status& other) const {
+        return code == other.getCode();
+    }
+
+    StatusCode getCode() const {
         return code;
     }
-private
-    StatusCode code;
-}
 
-template class StatusWith<typename T> : public Status {
+private:
+    StatusCode code;
+};
+
+template<typename T> class StatusWith : public Status {
 public:
     /**
      * Create a successful status, with the result 'result'
      */
-    StatusWith(T result) : Status(SUCCESS), result(result) {}
+    StatusWith(T result) : Status(StatusCode::SUCCESS), result(result) {}
 
     /**
      * Create a non-successful status, with no result.
@@ -65,8 +75,12 @@ public:
      * Invalid if the status is not SUCCESS.
      */
     T& operator*() {
-        invariant(code == StatusCode::SUCCESS);
+        invariant(getCode() == StatusCode::SUCCESS);
         return result;
+    }
+
+    T* operator->() {
+        return &result;
     }
 private:
     union {
@@ -74,6 +88,6 @@ private:
         /**
          * Dummy data so that result can be 'null'.
          */
-        char[sizeof(T)];
+        char __dummy[sizeof(T)];
     };
-}
+};

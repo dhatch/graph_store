@@ -12,6 +12,23 @@ class Node {
 public:
     Node(NodeId id) : _id(id) {};
     NodeId getId() const;
+
+    std::unordered_set<Node*> edges() const;
+
+    /**
+     * Return true if the edge was added, false if it already exists.
+     */
+    bool addEdge(Node* node);
+
+    /**
+     * Return true if the edge was removed, false if it didn't exist.
+     */
+    bool removeEdge(Node* node);
+
+    /**
+     * Return true if there is an edge to 'node'.
+     */
+    bool hasEdge(Node *node) const;
 private:
     NodeId _id;
 
@@ -22,8 +39,6 @@ private:
      * The lifetime of the edges must extend that of this node.
      */
     std::unordered_set<Node*> _edges;
-
-    friend class MemoryStore;
 };
 
 using NodeList = std::vector<Node>;
