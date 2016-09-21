@@ -1,5 +1,6 @@
 #include "db/memory_store.h"
 
+#include <deque>
 #include <utility>
 
 #include "db/types.h"
@@ -132,4 +133,50 @@ StatusWith<NodeIdList> MemoryStore::getNeighbors(NodeId nodeId) const {
     }
 
     return result;
+}
+
+StatusWith<uint64_t> MemoryStore::shortestPath(NodeId nodeAId, NodeId nodeBId) const {
+    auto status_with_node = findNode(nodeAId);
+    if (!status_with_node) {
+        return status_with_node.getCode();
+    }
+
+    if (!findNode(nodeBId)) {
+        return StatusCode::DOES_NOT_EXIST;
+    }
+
+    if (nodeAId == nodeBId) {
+       return StatusCode::INVALID;
+    }
+
+    const Node* start = *status_with_node;
+
+    // A depth first search.
+    uint64_t distance = 0;
+    std::deque<const Node*> toSearch = {start};
+    std::deque<const Node*> nextSearch;
+    std::unordered_set<NodeId> found;
+
+    while (toSearch.size()) {
+        for (const Node* n : toSearch) {
+            // Check if we found our match.
+            if (n->getId() == nodeBId) {
+                return distance++;
+            }
+
+            // Add all the edges of n to nextSearch.
+            for (const Node* edge : n->edges()) {
+                if (!found.insert(edge->getId()).second) {
+                    continue;
+                }
+                nextSearch.push_back(edge);
+            }
+        }
+
+        distance++;
+        toSearch = std::move(nextSearch);
+        nextSearch.clear();
+    }
+
+    return StatusCode::DOES_NOT_EXIST;
 }

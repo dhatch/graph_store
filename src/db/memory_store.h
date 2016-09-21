@@ -58,9 +58,12 @@ public:
     StatusWith<NodeIdList> getNeighbors(NodeId nodeId) const;
 
     /**
-     * Find the shortest path between 'nodeAId' and 'nodeBId'.
+     * Find the length of the shortest path between 'nodeAId' and 'nodeBId'.
+     *
+     * Note, since there is no maximum distance, this implementation is
+     * unbounded in its time and memory usage.
      */
-    //StatusWith<NodeList> shortestPath(NodeId nodeAId, NodeId nodeBId) const;
+    StatusWith<uint64_t> shortestPath(NodeId nodeAId, NodeId nodeBId) const;
 
 private:
     std::map<NodeId, std::unique_ptr<Node>> _nodes;

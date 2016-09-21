@@ -108,6 +108,50 @@ TEST(MemoryStoreGetNeighbors) {
     EXPECT_TRUE(std::find(edges.begin(), edges.end(), 3) != edges.end());
     EXPECT_EQ(edges.size(), 2);
 
+    EXPECT_FALSE(store.getNeighbors(5));
+
+    END;
+}
+
+TEST(MemoryStoreShortestPath) {
+    MemoryStore store;
+
+    EXPECT_TRUE(store.addNode(1));
+    EXPECT_TRUE(store.addNode(2));
+    EXPECT_TRUE(store.addNode(3));
+    EXPECT_TRUE(store.addNode(4));
+    EXPECT_TRUE(store.addNode(5));
+
+    EXPECT_TRUE(store.addEdge(1, 2));
+    EXPECT_TRUE(store.addEdge(2, 3));
+
+    auto status_with_len = store.shortestPath(1, 3);
+    EXPECT_TRUE(status_with_len);
+    EXPECT_EQ(*status_with_len, 2);
+
+    EXPECT_TRUE(store.addEdge(3, 1));
+    EXPECT_TRUE(store.addEdge(2, 4));
+    EXPECT_TRUE(store.addEdge(4, 5));
+
+    status_with_len = store.shortestPath(1, 3);
+    EXPECT_TRUE(status_with_len);
+    EXPECT_EQ(*status_with_len, 1);
+
+    status_with_len = store.shortestPath(1, 4);
+    EXPECT_TRUE(status_with_len);
+    EXPECT_EQ(*status_with_len, 2);
+
+    status_with_len = store.shortestPath(1, 5);
+    EXPECT_TRUE(status_with_len);
+    EXPECT_EQ(*status_with_len, 3);
+
+    EXPECT_TRUE(store.addNode(6));
+    EXPECT_FALSE(store.shortestPath(1, 6));
+
+    EXPECT_FALSE(store.shortestPath(1, 7));
+    EXPECT_FALSE(store.shortestPath(7, 1));
+    EXPECT_FALSE(store.shortestPath(1, 1));
+
     END;
 }
 
@@ -118,4 +162,5 @@ int main() {
     MemoryStoreAddEdge();
     MemoryStoreRemoveEdge();
     MemoryStoreGetNeighbors();
+    MemoryStoreShortestPath();
 }
