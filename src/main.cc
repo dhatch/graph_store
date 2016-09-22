@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
     server.setOption("enable_directory_listing", "false");
     server.start();
 
-    cout << "Server started, routes:" << endl;
+    cout << "Server started on port: " << port << ", routes:" << endl;
     controller.dumpRoutes();
 
     while (running) {
