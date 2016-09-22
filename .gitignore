@@ -36,3 +36,10 @@
 *.pyc
 .sconsign.dblite
 build
+
+# CMake
+
+lib/**/Makefile
+lib/**/CMakeCache.txt
+lib/**/CMakeFiles
+lib/**/*.cmake

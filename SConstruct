@@ -7,7 +7,8 @@ AddOption(
     help='debug build',
     default=False)
 
-env = Environment(CPPPATH=['#/src', '#/lib'], CXXFLAGS=["--std=c++11"])
+env = Environment(CPPPATH=['#/src', '#/lib/mongoose', '#/lib/jsoncpp/dist/'],
+                  CXXFLAGS=["--std=c++11"])
 
 Export('env')
 
@@ -21,9 +22,6 @@ else:
 
 env.Append(CXXFLAGS=[opt_flag])
 
-env.SConscript(dirs=[
-    'src'
-], variant_dir=variant_dir)
 
 env.Command('#/lib/mongoose/libmongoose.a', [
     Glob('#/lib/mongoose/mongoose/*'),
@@ -31,3 +29,14 @@ env.Command('#/lib/mongoose/libmongoose.a', [
   ],
   'cmake -JSONCPP_DIR=../jsoncpp -DHAS_JSONCPP=ON . && make',
   chdir=True)
+
+env.Command('#/lib/jsoncpp/dist/json/json.h', [
+        Glob('#/lib/jsoncpp/include/*'),
+        Glob('#/lib/jsoncpp/src/*'),
+    ],
+    'python amalgamate.py',
+    chdir='lib/jsoncpp')
+
+env.SConscript(dirs=[
+    'src'
+], variant_dir=variant_dir)

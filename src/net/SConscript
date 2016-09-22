@@ -1,0 +1,13 @@
+# -*- mode: python -*-
+
+Import("env")
+
+env.Library(
+    target='net',
+    source=[
+        'http_controller.cc',
+        '#/lib/jsoncpp/dist/json/json.h',
+        '#/lib/mongoose/libmongoose.a'
+    ],
+    LIBS=['mongoose', 'jsoncpp'],
+    LIBPATH=['#/lib/mongoose', '#/lib/jsoncpp/src/lib_json'])
