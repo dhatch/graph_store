@@ -1,5 +1,7 @@
 #include "net/http_controller.h"
 
+#include <cstdlib>
+
 #include "mongoose/Server.h"
 
 volatile static bool running = true;
@@ -12,14 +14,21 @@ void handle_signal(int sig)
     }
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+    if (argc <= 1) {
+        return EXIT_FAILURE;
+    }
+
+    char* port_c = argv[1];
+    int port = std::atoi(port_c);
+
     srand(time(NULL));
 
     signal(SIGINT, handle_signal);
 
     HTTPController controller;
-    Mongoose::Server server(8080);
+    Mongoose::Server server(port);
     server.registerController(&controller);
     server.setOption("enable_directory_listing", "false");
     server.start();
