@@ -1,6 +1,8 @@
 #include "net/http_controller.h"
 
 #include <cstdlib>
+#include <csignal>
+#include <unistd.h>
 
 #include "mongoose/Server.h"
 

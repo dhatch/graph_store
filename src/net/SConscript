@@ -7,8 +7,4 @@ env.Library(
     source=[
         'http_controller.cc',
         'hatch_response.cc',
-        '#/lib/jsoncpp/dist/json/json.h',
-        '#/lib/mongoose/libmongoose.a'
-    ],
-    LIBS=['mongoose', 'jsoncpp', 'db'],
-    LIBPATH=['#/lib/mongoose', '#/lib/jsoncpp/src/lib_json', '../db'])
+    ])

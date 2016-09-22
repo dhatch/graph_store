@@ -1,5 +1,7 @@
 #include "util/testing.h"
 
+#include <algorithm>
+
 #include "db/memory_store.h"
 #include "db/types.h"
 #include "util/status.h"
