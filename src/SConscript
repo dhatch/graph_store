@@ -9,5 +9,5 @@ env.SConscript(dirs=[
 
 env.Program('server',
     source=['main.cc'],
-    LIBS=['mongoose', 'jsoncpp', 'net'],
-    LIBPATH=['#/lib/mongoose', '#/lib/jsoncpp/src/lib_json', 'net'])
+    LIBS=['mongoose', 'jsoncpp', 'net', 'db'],
+    LIBPATH=['#/lib/mongoose', '#/lib/jsoncpp/src/lib_json', 'net', 'db'])

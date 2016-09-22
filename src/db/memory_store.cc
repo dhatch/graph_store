@@ -146,7 +146,7 @@ StatusWith<uint64_t> MemoryStore::shortestPath(NodeId nodeAId, NodeId nodeBId) c
     }
 
     if (nodeAId == nodeBId) {
-       return StatusCode::INVALID;
+       return StatusCode::NO_ACTION;
     }
 
     const Node* start = *status_with_node;
@@ -178,5 +178,5 @@ StatusWith<uint64_t> MemoryStore::shortestPath(NodeId nodeAId, NodeId nodeBId) c
         nextSearch.clear();
     }
 
-    return StatusCode::DOES_NOT_EXIST;
+    return StatusCode::NO_ACTION;
 }
