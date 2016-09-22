@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
@@ -8,5 +8,14 @@ popd > /dev/null
 
 set -ev
 
-git clone --depth=1 --branch=6.5 git@github.com:cesanta/mongoose.git $SCRIPTPATH/lib/mongoose
-rm -rf !$/.git
+rm -rf $SCRIPTPATH/../lib/mongoose
+git clone git@github.com:Gregwar/mongoose-cpp.git $SCRIPTPATH/../lib/mongoose
+cd $SCRIPTPATH/../lib/mongoose
+git reset --hard e7c87d3b9c79cffce41752583544586ec6ad365b
+
+rm -rf $SCRIPTPATH/../lib/jsoncpp
+git clone --depth=1 --branch=1.7.5 git@github.com:open-source-parsers/jsoncpp.git $SCRIPTPATH/../lib/jsoncpp
+cd $SCRIPTPATH/../lib/jsoncpp
+
+
+rm -rf .git

@@ -1,12 +1,13 @@
 # -*- mode: python -*-
-#
+import os
+
 AddOption(
     '--dbg',
     action='store_true',
     help='debug build',
     default=False)
 
-env = Environment(CPPPATH='#/src', CXXFLAGS=["--std=c++11"])
+env = Environment(CPPPATH=['#/src', '#/lib'], CXXFLAGS=["--std=c++11"])
 
 Export('env')
 
@@ -23,3 +24,10 @@ env.Append(CXXFLAGS=[opt_flag])
 env.SConscript(dirs=[
     'src'
 ], variant_dir=variant_dir)
+
+env.Command('#/lib/mongoose/libmongoose.a', [
+    Glob('#/lib/mongoose/mongoose/*'),
+    Glob('#/lib/mongoose/mongoose.*'),
+  ],
+  'cmake -JSONCPP_DIR=../jsoncpp -DHAS_JSONCPP=ON . && make',
+  chdir=True)
