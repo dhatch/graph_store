@@ -39,7 +39,6 @@ env.Command('#/lib/jsoncpp/dist/json/json.h', [
 
 env.Command('#/lib/jsoncpp/src/lib_json/libjsoncpp.a', [
         Glob('#/lib/jsoncpp/include/*'),
-        Glob('#/lib/jsoncpp/src/*'),
     ],
     'cmake . && make',
     chdir='lib/jsoncpp')
