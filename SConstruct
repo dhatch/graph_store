@@ -37,6 +37,14 @@ env.Command('#/lib/jsoncpp/dist/json/json.h', [
     'python amalgamate.py',
     chdir='lib/jsoncpp')
 
+env.Command('#/lib/jsoncpp/src/lib_json/libjsoncpp.a', [
+        Glob('#/lib/jsoncpp/include/*'),
+        Glob('#/lib/jsoncpp/src/*'),
+    ],
+    'cmake . && make',
+    chdir='lib/jsoncpp')
+
+
 env.SConscript(dirs=[
     'src'
 ], variant_dir=variant_dir)
