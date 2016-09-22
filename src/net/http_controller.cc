@@ -240,6 +240,7 @@ void HTTPController::shortest_path(Request& request, HatchResponse& response) {
 }
 
 void HTTPController::setup() {
+    setPrefix("/api/v1");
     addRouteResponse("POST", "/add_node", HTTPController, add_node, HatchResponse);
     addRouteResponse("POST", "/remove_node", HTTPController, remove_node, HatchResponse);
     addRouteResponse("POST", "/get_node", HTTPController, get_node, HatchResponse);
