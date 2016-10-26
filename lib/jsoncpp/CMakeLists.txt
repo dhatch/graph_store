@@ -22,6 +22,11 @@ IF(NOT WIN32)
     ENDIF()
 ENDIF()
 
+# Enable runtime search path support for dynamic libraries on OSX
+IF(APPLE)
+    SET(CMAKE_MACOSX_RPATH 1)
+ENDIF()
+
 SET(DEBUG_LIBNAME_SUFFIX "" CACHE STRING "Optional suffix to append to the library name for a debug build")
 SET(LIB_SUFFIX "" CACHE STRING "Optional arch-dependent suffix for the library installation directory")
 
@@ -64,11 +69,12 @@ ENDMACRO()
 #SET( JSONCPP_VERSION_MAJOR X )
 #SET( JSONCPP_VERSION_MINOR Y )
 #SET( JSONCPP_VERSION_PATCH Z )
-SET( JSONCPP_VERSION 1.7.5 )
+SET( JSONCPP_VERSION 1.7.7 )
 jsoncpp_parse_version( ${JSONCPP_VERSION} JSONCPP_VERSION )
 #IF(NOT JSONCPP_VERSION_FOUND)
 #    MESSAGE(FATAL_ERROR "Failed to parse version string properly. Expect X.Y.Z")
 #ENDIF(NOT JSONCPP_VERSION_FOUND)
+SET( JSONCPP_SOVERSION 11 )
 SET( JSONCPP_USE_SECURE_MEMORY "0" CACHE STRING "-D...=1 to use memory-wiping allocator for STL" )
 
 MESSAGE(STATUS "JsonCpp Version: ${JSONCPP_VERSION_MAJOR}.${JSONCPP_VERSION_MINOR}.${JSONCPP_VERSION_PATCH}")
