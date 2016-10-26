@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include "util/assert.h"
 
 /**
@@ -33,7 +35,12 @@ enum class StatusCode {
     /**
      * Invalid operation.
      */
-    INVALID
+    INVALID,
+
+    /**
+     * No space remaining.
+     */
+    NO_SPACE
 };
 
 class Status {
@@ -62,22 +69,50 @@ public:
     /**
      * Create a successful status, with the result 'result'
      */
-    StatusWith(T result) : Status(StatusCode::SUCCESS), result(result), empty(false) {}
+    template<typename = std::enable_if<std::is_copy_constructible<T>::value>>
+    StatusWith(const T& result) : Status(StatusCode::SUCCESS), result(result), empty(false) {}
 
-    StatusWith(const StatusWith& other) : Status(other.getCode()) {
+    template<typename std::enable_if<
+        !std::is_reference<T>::value>::type* = nullptr>
+    StatusWith(T&& result) : Status(StatusCode::SUCCESS), result(std::move(result)), empty(false) {}
+
+    template<typename = std::enable_if<std::is_copy_constructible<T>::value>>
+    StatusWith(const StatusWith& other) : Status(other.getCode()), result(other.result) {
         if (other.empty) {
             return;
         }
 
-        result = other.result;
         empty = false;
     }
 
+    template<typename = std::enable_if<std::is_copy_assignable<T>::value>>
     StatusWith& operator=(const StatusWith& other) {
         empty = other.empty;
 
         if (!empty) {
             result = other.result;
+        }
+
+        code = other.getCode();
+        return *this;
+    }
+
+    template<typename = std::enable_if<std::is_move_constructible<T>::value>>
+    StatusWith(StatusWith&& other) :
+            Status(other.getCode()), result(std::move(other.result)) {
+        if (other.empty) {
+            return;
+        }
+
+        empty = false;
+    }
+
+    template<typename = std::enable_if<std::is_move_assignable<T>::value>>
+    StatusWith& operator=(const StatusWith&& other) {
+        empty = other.empty;
+
+        if (!empty) {
+            result = std::move(other.result);
         }
 
         code = other.getCode();
