@@ -19,18 +19,28 @@ void handle_signal(int sig)
 
 int main(int argc, char* argv[])
 {
-    if (argc <= 1) {
+    if (argc <= 2) {
         return EXIT_FAILURE;
     }
 
-    char* port_c = argv[1];
+    char** arg = argv + 1;
+    bool format = false;
+    if (strcmp(*arg, "-f") == 0) {
+        format = true;
+        arg++;
+    }
+
+    char* port_c = *(arg++);
     int port = std::atoi(port_c);
+
+    char* devPath = *(arg++);
 
     srand(time(NULL));
 
     signal(SIGINT, handle_signal);
 
-    HTTPController controller;
+    LoggedStore loggedStore(devPath, format);
+    HTTPController controller(loggedStore);
     Mongoose::Server server(port);
     server.registerController(&controller);
     server.setOption("enable_directory_listing", "false");

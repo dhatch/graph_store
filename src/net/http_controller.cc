@@ -17,6 +17,10 @@ namespace {
     void make204(JsonResponse& response) {
         response.setCode(204);
     }
+
+    void make507(JsonResponse& response) {
+        response.setCode(507);
+    }
 }
 
 
@@ -87,6 +91,9 @@ void HTTPController::add_node(Request& request, HatchResponse& response) {
     } else if (!status) {
         make400(response);
         return;
+    } else if (status == StatusCode::NO_SPACE) {
+        make507(response);
+        return;
     }
 
     response["node_id"] = nodeId;
@@ -102,7 +109,10 @@ void HTTPController::remove_node(Request& request, HatchResponse& response) {
     NodeId nodeId = *status_with_node_id;
 
     auto status = store.removeNode(nodeId);
-    if (!status) {
+    if (status == StatusCode::NO_SPACE) {
+        make507(response);
+        return;
+    } else if (!status) {
         make400(response);
         return;
     }
@@ -141,6 +151,9 @@ void HTTPController::add_edge(Request& request, HatchResponse& response) {
     } else if (!status) {
         make400(response);
         return;
+    } else if (status == StatusCode::NO_SPACE) {
+        make507(response);
+        return;
     }
 
     response["node_a_id"] = nodeAId;
@@ -158,7 +171,10 @@ void HTTPController::remove_edge(Request& request, HatchResponse& response) {
     NodeId nodeBId = status_with_node_ids->second;
 
     auto status = store.removeEdge(nodeAId, nodeBId);
-    if (!status) {
+    if (status == StatusCode::NO_SPACE) {
+        make507(response);
+        return;
+    } else if (!status) {
         make400(response);
         return;
     }

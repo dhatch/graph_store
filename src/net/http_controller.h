@@ -2,13 +2,15 @@
 
 #include <utility>
 
-#include "db/memory_store.h"
+#include "db/logged_store.h"
 #include "net/hatch_response.h"
 
 #pragma once
 
 class HTTPController : public Mongoose::JsonController {
 public:
+    HTTPController(LoggedStore& store) : store(store) {};
+
     void add_node(Mongoose::Request& request, HatchResponse& response);
     void remove_node(Mongoose::Request& request, HatchResponse& response);
     void get_node(Mongoose::Request& request, HatchResponse& response);
@@ -26,5 +28,5 @@ private:
     StatusWith<NodeId> getNodeId(Mongoose::Request &request, HatchResponse& response);
     StatusWith<std::pair<NodeId, NodeId>> getEdgeIds(Mongoose::Request &request, HatchResponse& response);
 
-    MemoryStore store;
+    LoggedStore &store;
 };

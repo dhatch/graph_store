@@ -5,10 +5,17 @@ Import('env')
 env.Library(
     target='db',
     source=[
+        'logged_store.cc',
+        'log_manager.cc',
         'memory_store.cc',
         'types.cc',
     ]
 )
+
+env.Program('log_manager_test',
+    source=['log_manager_test.cc'],
+    LIBS=['db', 'io'],
+    LIBPATH=['.', '../io'])
 
 env.Program('memory_store_test',
     source=['memory_store_test.cc'],

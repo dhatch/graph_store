@@ -42,6 +42,12 @@ public:
      */
     Status write(const Buffer& buffer) const;
 
+    // Get the block size in bytes.
+    uint64_t getBlockSize() const;
+
+    // Get the device size in blocks.
+    uint64_t getDeviceSize() const;
+
 private:
     // The file descriptor for the device.
     int _devFd;

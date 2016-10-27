@@ -50,13 +50,29 @@ StatusWith<Buffer> BufferManager::get(std::size_t blockNum) const {
     }
 
     Buffer buf(_blockSize, blockNum);
-    check_errno(pread(_devFd, buf.getRaw(), _blockSize, _blockSize * blockNum));
+    std::size_t read = pread(
+        _devFd, buf.getRaw(), _blockSize, _blockSize * blockNum);
+
+    check_errno((int)read);
+    invariant(read == _blockSize);
 
     return std::move(buf);
 }
 
 Status BufferManager::write(const Buffer& buffer) const {
-    check_errno(pwrite(_devFd, buffer.getRaw(), _blockSize,
-                       _blockSize * buffer._blockNum));
+    std::size_t written = pwrite(_devFd, buffer.getRaw(), _blockSize,
+                                 _blockSize * buffer._blockNum);
+
+    check_errno((int)written);
+    invariant(written == _blockSize);
+
     return StatusCode::SUCCESS;
+}
+
+uint64_t BufferManager::getBlockSize() const {
+    return _blockSize;
+}
+
+uint64_t BufferManager::getDeviceSize() const {
+    return _deviceSize;
 }

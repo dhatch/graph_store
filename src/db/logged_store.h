@@ -1,25 +1,21 @@
-/**
- * memory_store.h: Store graph data in-memory.
- */
-
 #pragma once
 
-#include <map>
-#include <memory>
-#include <utility>
-
-#include "db/graph_store.h"
+#include "db/log_manager.h"
+#include "db/memory_store.h"
 #include "db/types.h"
-#include "util/status.h"
 #include "util/nocopy.h"
+#include "util/status.h"
 
 /**
- * Graph store interface.
+ * A graph store that maintains an on disk log and checkpoint in addition
+ * to an in memory data representation.
+ *
+ * This enables durability.
  */
-class MemoryStore : public GraphStore {
-    DISALLOW_COPY(MemoryStore);
+class LoggedStore : public GraphStore {
+    DISALLOW_COPY(LoggedStore);
 public:
-    MemoryStore() = default;
+    LoggedStore(const char* deviceName, bool formatLog);
 
     /**
      * Add a node with id `node_id` to the store.
@@ -66,6 +62,12 @@ public:
     StatusWith<uint64_t> shortestPath(NodeId nodeAId,
                                       NodeId nodeBId) const override;
 
-protected:
-    std::map<NodeId, std::unique_ptr<Node>> _nodes;
+    /**
+     * Recover operations from the on disk log.
+     */
+    void recover();
+private:
+    BufferManager _bufferManager;
+    LogManager _log;
+    MemoryStore _memoryStore;
 };
