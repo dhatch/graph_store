@@ -2,8 +2,8 @@
 
 
 #include <cstdlib>
+#include <csignal>
 #include <unistd.h>
-#include <signal.h>
 
 #include "mongoose/Server.h"
 

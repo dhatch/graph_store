@@ -8,7 +8,9 @@ env.SConscript(dirs=[
 ])
 
 env.Program('cs426_graph_server',
-    source=['main.cc'],
+    source=[
+        'main.cc'
+    ],
     LIBS=['net', 'db', 'mongoose', 'jsoncpp', 'pthread'],
     LIBPATH=['#/lib/mongoose', '#/lib/jsoncpp/src/lib_json', 'net', 'db'])
 

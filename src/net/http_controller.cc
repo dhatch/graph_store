@@ -84,12 +84,10 @@ void HTTPController::add_node(Request& request, HatchResponse& response) {
     if (status == StatusCode::NO_ACTION) {
         make204(response);
         return;
-    } else if (status == StatusCode::INVALID) {
+    } else if (!status) {
         make400(response);
         return;
     }
-
-    invariant(status);
 
     response["node_id"] = nodeId;
     return;
@@ -108,8 +106,6 @@ void HTTPController::remove_node(Request& request, HatchResponse& response) {
         make400(response);
         return;
     }
-
-    invariant(status);
 
     response["node_id"] = nodeId;
     return;
@@ -142,12 +138,10 @@ void HTTPController::add_edge(Request& request, HatchResponse& response) {
     if (status == StatusCode::NO_ACTION) {
         make204(response);
         return;
-    } else if (status == StatusCode::INVALID) {
+    } else if (!status) {
         make400(response);
         return;
     }
-
-    invariant(status);
 
     response["node_a_id"] = nodeAId;
     response["node_b_id"] = nodeBId;
@@ -168,8 +162,6 @@ void HTTPController::remove_edge(Request& request, HatchResponse& response) {
         make400(response);
         return;
     }
-
-    invariant(status);
 
     response["node_a_id"] = nodeAId;
     response["node_b_id"] = nodeBId;
@@ -206,7 +198,7 @@ void HTTPController::get_neighbors(Request& request, HatchResponse& response) {
         return;
     }
 
-    Json::Value neighbors;
+    Json::Value neighbors(Json::ValueType::arrayValue);
     for (auto&& node : *status) {
         neighbors.append(node);
     }
