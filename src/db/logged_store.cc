@@ -89,7 +89,6 @@ void LoggedStore::recover() {
     LogManager::Reader &reader = _log.readLog();
     while (reader.hasNext()) {
         LogManager::Entry entry = reader.getNext();
-        std::cerr << "Recover: " << entry << std::endl;
         switch (entry.opcode) {
             case LogManager::OpCode::ADD_NODE:
                 _memoryStore.addNode(entry.idA);

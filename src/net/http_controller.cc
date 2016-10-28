@@ -88,11 +88,11 @@ void HTTPController::add_node(Request& request, HatchResponse& response) {
     if (status == StatusCode::NO_ACTION) {
         make204(response);
         return;
-    } else if (!status) {
-        make400(response);
-        return;
     } else if (status == StatusCode::NO_SPACE) {
         make507(response);
+        return;
+    }  else if (!status) {
+        make400(response);
         return;
     }
 
@@ -148,11 +148,11 @@ void HTTPController::add_edge(Request& request, HatchResponse& response) {
     if (status == StatusCode::NO_ACTION) {
         make204(response);
         return;
-    } else if (!status) {
-        make400(response);
-        return;
     } else if (status == StatusCode::NO_SPACE) {
         make507(response);
+        return;
+    } else if (!status) {
+        make400(response);
         return;
     }
 

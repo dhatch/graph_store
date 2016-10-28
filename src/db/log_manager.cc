@@ -119,7 +119,6 @@ void LogManager::format() {
 }
 
 Status LogManager::logOperation(LogManager::Entry entry) {
-    std::cerr << "Log entry: " << entry << std::endl;
     LogBlock *logBlock = static_cast<LogBlock*>(_currentBlock->getRaw());
 
     // Block is full.
