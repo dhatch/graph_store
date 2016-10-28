@@ -66,6 +66,7 @@ public:
     StatusWith<uint64_t> shortestPath(NodeId nodeAId,
                                       NodeId nodeBId) const override;
 
-protected:
+    friend class CheckpointManager;
+private:
     std::map<NodeId, std::unique_ptr<Node>> _nodes;
 };

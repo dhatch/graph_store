@@ -247,6 +247,20 @@ void HTTPController::shortest_path(Request& request, HatchResponse& response) {
     return;
 }
 
+void HTTPController::checkpoint(Mongoose::Request &request, HatchResponse& response) {
+    auto status = store.checkpoint();
+    if (status == StatusCode::NO_SPACE) {
+        make507(response);
+        return;
+    }
+
+    invariant(status);
+
+    response["ok"] = 1;
+
+    return;
+}
+
 void HTTPController::setup() {
     setPrefix("/api/v1");
     addRouteResponse("POST", "/add_node", HTTPController, add_node, HatchResponse);
@@ -257,4 +271,5 @@ void HTTPController::setup() {
     addRouteResponse("POST", "/get_edge", HTTPController, get_edge, HatchResponse);
     addRouteResponse("POST", "/get_neighbors", HTTPController, get_neighbors, HatchResponse);
     addRouteResponse("POST", "/shortest_path", HTTPController, shortest_path, HatchResponse);
+    addRouteResponse("POST", "/checkpoint", HTTPController, checkpoint, HatchResponse);
 }

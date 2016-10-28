@@ -44,17 +44,19 @@ BufferManager::~BufferManager() {
     check_errno(close(_devFd));
 }
 
-StatusWith<Buffer> BufferManager::get(std::size_t blockNum) const {
+StatusWith<Buffer> BufferManager::get(std::size_t blockNum, bool zeroed) const {
     if (blockNum >= _deviceSize) {
         return StatusCode::NO_SPACE;
     }
 
     Buffer buf(_blockSize, blockNum);
-    std::size_t read = pread(
-        _devFd, buf.getRaw(), _blockSize, _blockSize * blockNum);
+    if (!zeroed) {
+        std::size_t read = pread(
+            _devFd, buf.getRaw(), _blockSize, _blockSize * blockNum);
 
-    check_errno((int)read);
-    invariant(read == _blockSize);
+        check_errno((int)read);
+        invariant(read == _blockSize);
+    }
 
     return std::move(buf);
 }

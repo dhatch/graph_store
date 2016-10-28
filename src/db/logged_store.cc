@@ -9,11 +9,16 @@
 
 LoggedStore::LoggedStore(const char* deviceName, bool formatLog) :
         _bufferManager(deviceName),
-        _log(_bufferManager, {0, _bufferManager.getDeviceSize() / 5}) {
+        _log(_bufferManager, {0, _bufferManager.getDeviceSize() / 5}),
+        _checkpoint(_bufferManager,
+                    {_bufferManager.getDeviceSize() / 5, _bufferManager.getDeviceSize()},
+                    this) {
     if (formatLog) {
         _log.format();
+        _checkpoint.format();
     } else {
         _log.init();
+        _checkpoint.init();
         recover();
     }
 }
@@ -68,7 +73,19 @@ StatusWith<uint64_t> LoggedStore::shortestPath(NodeId nodeAId,
     return _memoryStore.shortestPath(nodeAId, nodeBId);
 }
 
+Status LoggedStore::checkpoint() {
+    auto status = _checkpoint.performCheckpoint(_log.getGeneration());
+    if (!status) {
+        // Note the database is not recoverable at this point.
+        return status;
+    }
+
+    _log.increaseGeneration();
+    return StatusCode::SUCCESS;
+}
+
 void LoggedStore::recover() {
+    _checkpoint.restoreCheckpoint(_log.getGeneration() - 1);
     LogManager::Reader &reader = _log.readLog();
     while (reader.hasNext()) {
         LogManager::Entry entry = reader.getNext();

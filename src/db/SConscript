@@ -5,6 +5,7 @@ Import('env')
 env.Library(
     target='db',
     source=[
+        'checkpoint_manager.cc',
         'logged_store.cc',
         'log_manager.cc',
         'memory_store.cc',

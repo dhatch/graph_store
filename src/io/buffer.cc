@@ -24,6 +24,20 @@ Buffer::Buffer(Buffer&& other) : _data(other._data), _size(other._size),
     other._data = nullptr;
 }
 
+Buffer& Buffer::operator=(Buffer&& other) {
+    if (_data) {
+        check_errno(munmap(_data, _size));
+    }
+
+    _data = other._data;
+    _size = other._size;
+    _blockNum = other._blockNum;
+
+    other._data = nullptr;
+
+    return *this;
+}
+
 Buffer::~Buffer() {
     if (_data) {
         check_errno(munmap(_data, _size));

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "db/log_manager.h"
+#include "db/checkpoint_manager.h"
 #include "db/memory_store.h"
 #include "db/types.h"
 #include "util/nocopy.h"
@@ -62,12 +63,21 @@ public:
     StatusWith<uint64_t> shortestPath(NodeId nodeAId,
                                       NodeId nodeBId) const override;
 
+
+    /**
+     * Checkpoint into the checkpoint space.
+     */
+    Status checkpoint();
+
     /**
      * Recover operations from the on disk log.
      */
     void recover();
+
+    friend class CheckpointManager;
 private:
     BufferManager _bufferManager;
     LogManager _log;
+    CheckpointManager _checkpoint;
     MemoryStore _memoryStore;
 };

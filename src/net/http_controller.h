@@ -22,6 +22,8 @@ public:
     void get_neighbors(Mongoose::Request& request, HatchResponse& response);
     void shortest_path(Mongoose::Request& request, HatchResponse& response);
 
+    void checkpoint(Mongoose::Request& request, HatchResponse& response);
+
     void setup();
 private:
     StatusWith<Json::Value> getJSON(Mongoose::Request& request);

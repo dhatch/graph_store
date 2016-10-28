@@ -14,6 +14,8 @@ public:
     ~Buffer();
     Buffer(Buffer&& other);
 
+    Buffer& operator=(Buffer&& other);
+
     /**
      * Get access to the underlying memory region.
      */

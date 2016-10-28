@@ -32,7 +32,7 @@ public:
      * NO_SPACE error if the block requested is outside the range of the
      * device.
      */
-    StatusWith<Buffer> get(std::size_t blockNum) const;
+    StatusWith<Buffer> get(std::size_t blockNum, bool zeroed = false) const;
 
     /**
      * Write the buffer back to disk.
