@@ -12,6 +12,7 @@
 #include "util/status.h"
 
 class GraphStore {
+public:
     /**
      * Add a node with id `node_id` to the store.
      */

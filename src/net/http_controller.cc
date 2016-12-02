@@ -3,6 +3,9 @@
 #include "json/json.h"
 #include "mongoose/JsonController.h"
 
+#include "db/graph_store.h"
+#include "db/logged_store.h"
+#include "db/memory_store.h"
 #include "db/types.h"
 #include "util/status.h"
 #include "util/assert.h"
@@ -16,6 +19,10 @@ namespace {
 
     void make204(JsonResponse& response) {
         response.setCode(204);
+    }
+
+    void make501(JsonResponse& response) {
+        response.setCode(501);
     }
 
     void make507(JsonResponse& response) {
@@ -84,7 +91,7 @@ void HTTPController::add_node(Request& request, HatchResponse& response) {
 
     NodeId nodeId = *status_with_node_id;
 
-    auto status = store.addNode(nodeId);
+    auto status = store->addNode(nodeId);
     if (status == StatusCode::NO_ACTION) {
         make204(response);
         return;
@@ -108,7 +115,7 @@ void HTTPController::remove_node(Request& request, HatchResponse& response) {
 
     NodeId nodeId = *status_with_node_id;
 
-    auto status = store.removeNode(nodeId);
+    auto status = store->removeNode(nodeId);
     if (status == StatusCode::NO_SPACE) {
         make507(response);
         return;
@@ -129,7 +136,7 @@ void HTTPController::get_node(Request& request, HatchResponse& response) {
 
     NodeId nodeId = *status_with_node_id;
 
-    auto status = store.findNode(nodeId);
+    auto status = store->findNode(nodeId);
 
     response["in_graph"] = status.getCode() == StatusCode::SUCCESS;
     return;
@@ -144,7 +151,7 @@ void HTTPController::add_edge(Request& request, HatchResponse& response) {
     NodeId nodeAId = status_with_node_ids->first;
     NodeId nodeBId = status_with_node_ids->second;
 
-    auto status = store.addEdge(nodeAId, nodeBId);
+    auto status = store->addEdge(nodeAId, nodeBId);
     if (status == StatusCode::NO_ACTION) {
         make204(response);
         return;
@@ -170,7 +177,7 @@ void HTTPController::remove_edge(Request& request, HatchResponse& response) {
     NodeId nodeAId = status_with_node_ids->first;
     NodeId nodeBId = status_with_node_ids->second;
 
-    auto status = store.removeEdge(nodeAId, nodeBId);
+    auto status = store->removeEdge(nodeAId, nodeBId);
     if (status == StatusCode::NO_SPACE) {
         make507(response);
         return;
@@ -193,7 +200,7 @@ void HTTPController::get_edge(Request& request, HatchResponse& response) {
     NodeId nodeAId = status_with_node_ids->first;
     NodeId nodeBId = status_with_node_ids->second;
 
-    auto status = store.getEdge(nodeAId, nodeBId);
+    auto status = store->getEdge(nodeAId, nodeBId);
 
     response["in_graph"] = status.getCode() == StatusCode::SUCCESS;
 
@@ -208,7 +215,7 @@ void HTTPController::get_neighbors(Request& request, HatchResponse& response) {
 
     NodeId nodeId = *status_with_node_id;
 
-    auto status = store.getNeighbors(nodeId);
+    auto status = store->getNeighbors(nodeId);
     if (!status) {
         make400(response);
         return;
@@ -233,7 +240,7 @@ void HTTPController::shortest_path(Request& request, HatchResponse& response) {
     NodeId nodeAId = status_with_node_ids->first;
     NodeId nodeBId = status_with_node_ids->second;
 
-    auto status = store.shortestPath(nodeAId, nodeBId);
+    auto status = store->shortestPath(nodeAId, nodeBId);
     if (status == StatusCode::NO_ACTION) {
         make204(response);
         return;
@@ -248,7 +255,13 @@ void HTTPController::shortest_path(Request& request, HatchResponse& response) {
 }
 
 void HTTPController::checkpoint(Mongoose::Request &request, HatchResponse& response) {
-    auto status = store.checkpoint();
+    if (!loggingEnabled) {
+        make501(response);
+        return;
+    }
+
+    auto *loggedStore = dynamic_cast<LoggedStore*>(store);
+    auto status = loggedStore->checkpoint();
     if (status == StatusCode::NO_SPACE) {
         make507(response);
         return;
