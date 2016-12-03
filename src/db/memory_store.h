@@ -6,6 +6,7 @@
 
 #include <map>
 #include <memory>
+#include <mutex>
 #include <utility>
 
 #include "db/graph_store.h"
@@ -69,4 +70,6 @@ public:
     friend class CheckpointManager;
 private:
     std::map<NodeId, std::unique_ptr<Node>> _nodes;
+
+    mutable std::recursive_mutex _memoryStoreMutex;
 };

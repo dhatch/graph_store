@@ -1,6 +1,7 @@
 #include "db/memory_store.h"
 
 #include <deque>
+#include <mutex>
 #include <utility>
 
 #include "db/types.h"
@@ -8,12 +9,16 @@
 #include "util/stdx/memory.h"
 
 Status MemoryStore::addNode(NodeId nodeId) {
+    std::lock_guard<std::recursive_mutex> lock(_memoryStoreMutex);
+
     auto inserted = _nodes.emplace(std::piecewise_construct, std::forward_as_tuple(nodeId),
                                    std::forward_as_tuple(stdx::make_unique<Node>(nodeId)));
     return inserted.second ? StatusCode::SUCCESS : StatusCode::NO_ACTION;
 }
 
 Status MemoryStore::removeNode(NodeId nodeId) {
+    std::lock_guard<std::recursive_mutex> lock(_memoryStoreMutex);
+
     auto it = _nodes.find(nodeId);
     Node *node = nullptr;
     if (it == _nodes.end()) {
@@ -32,6 +37,8 @@ Status MemoryStore::removeNode(NodeId nodeId) {
 }
 
 StatusWith<Node*> MemoryStore::findNode(NodeId nodeId) const {
+    std::lock_guard<std::recursive_mutex> lock(_memoryStoreMutex);
+
     auto it = _nodes.find(nodeId);
     if (it == _nodes.end()) {
         return StatusCode::DOES_NOT_EXIST;
@@ -41,6 +48,8 @@ StatusWith<Node*> MemoryStore::findNode(NodeId nodeId) const {
 }
 
 StatusWith<std::pair<Node*, Node*>> MemoryStore::getEdge(NodeId nodeAId, NodeId nodeBId) const {
+    std::lock_guard<std::recursive_mutex> lock(_memoryStoreMutex);
+
     Node* nodeA = nullptr;
     Node* nodeB = nullptr;
 
@@ -71,6 +80,8 @@ StatusWith<std::pair<Node*, Node*>> MemoryStore::getEdge(NodeId nodeAId, NodeId 
 }
 
 Status MemoryStore::addEdge(NodeId nodeAId, NodeId nodeBId) {
+    std::lock_guard<std::recursive_mutex> lock(_memoryStoreMutex);
+
     Node* nodeA = nullptr;
     Node* nodeB = nullptr;
 
@@ -101,6 +112,8 @@ Status MemoryStore::addEdge(NodeId nodeAId, NodeId nodeBId) {
 }
 
 Status MemoryStore::removeEdge(NodeId nodeAId, NodeId nodeBId) {
+    std::lock_guard<std::recursive_mutex> lock(_memoryStoreMutex);
+
     auto status = getEdge(nodeAId, nodeBId);
     if (!status) {
         return status;
@@ -120,6 +133,8 @@ Status MemoryStore::removeEdge(NodeId nodeAId, NodeId nodeBId) {
 }
 
 StatusWith<NodeIdList> MemoryStore::getNeighbors(NodeId nodeId) const {
+    std::lock_guard<std::recursive_mutex> lock(_memoryStoreMutex);
+
     auto status_with_node = findNode(nodeId);
     if (!status_with_node) {
         return status_with_node.getCode();
@@ -136,6 +151,8 @@ StatusWith<NodeIdList> MemoryStore::getNeighbors(NodeId nodeId) const {
 }
 
 StatusWith<uint64_t> MemoryStore::shortestPath(NodeId nodeAId, NodeId nodeBId) const {
+    std::lock_guard<std::recursive_mutex> lock(_memoryStoreMutex);
+
     auto status_with_node = findNode(nodeAId);
     if (!status_with_node) {
         return status_with_node.getCode();
