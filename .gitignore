@@ -1,5 +1,7 @@
 cs426_graph_server
 
+gen-cpp/
+
 # Prerequisites
 *.d
 

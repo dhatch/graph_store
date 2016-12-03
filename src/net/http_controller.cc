@@ -21,6 +21,10 @@ namespace {
         response.setCode(204);
     }
 
+    void make500(JsonResponse& response) {
+        response.setCode(500);
+    }
+
     void make501(JsonResponse& response) {
         response.setCode(501);
     }
@@ -91,6 +95,11 @@ void HTTPController::add_node(Request& request, HatchResponse& response) {
 
     NodeId nodeId = *status_with_node_id;
 
+    if (!replManager->writesAllowed() || !replManager->replicateAddNode(nodeId)) {
+        make500(response);
+        return;
+    }
+
     auto status = store->addNode(nodeId);
     if (status == StatusCode::NO_ACTION) {
         make204(response);
@@ -114,6 +123,16 @@ void HTTPController::remove_node(Request& request, HatchResponse& response) {
     }
 
     NodeId nodeId = *status_with_node_id;
+
+    if (!store->findNode(nodeId)) {
+        make400(response);
+        return;
+    }
+
+    if (!replManager->writesAllowed() || !replManager->replicateRemoveNode(nodeId)) {
+        make500(response);
+        return;
+    }
 
     auto status = store->removeNode(nodeId);
     if (status == StatusCode::NO_SPACE) {
@@ -151,6 +170,21 @@ void HTTPController::add_edge(Request& request, HatchResponse& response) {
     NodeId nodeAId = status_with_node_ids->first;
     NodeId nodeBId = status_with_node_ids->second;
 
+    if (!store->findNode(nodeAId)) {
+        make400(response);
+        return;
+    }
+
+    if (!store->findNode(nodeBId)) {
+        make400(response);
+        return;
+    }
+
+    if (!replManager->writesAllowed() || !replManager->replicateAddEdge(nodeAId, nodeBId)) {
+        make500(response);
+        return;
+    }
+
     auto status = store->addEdge(nodeAId, nodeBId);
     if (status == StatusCode::NO_ACTION) {
         make204(response);
@@ -176,6 +210,21 @@ void HTTPController::remove_edge(Request& request, HatchResponse& response) {
 
     NodeId nodeAId = status_with_node_ids->first;
     NodeId nodeBId = status_with_node_ids->second;
+
+    if (!store->findNode(nodeAId)) {
+        make400(response);
+        return;
+    }
+
+    if (!store->findNode(nodeBId)) {
+        make400(response);
+        return;
+    }
+
+    if (!replManager->writesAllowed() || !replManager->replicateRemoveEdge(nodeAId, nodeBId)) {
+        make500(response);
+        return;
+    }
 
     auto status = store->removeEdge(nodeAId, nodeBId);
     if (status == StatusCode::NO_SPACE) {
@@ -257,6 +306,11 @@ void HTTPController::shortest_path(Request& request, HatchResponse& response) {
 void HTTPController::checkpoint(Mongoose::Request &request, HatchResponse& response) {
     if (!loggingEnabled) {
         make501(response);
+        return;
+    }
+
+    if (replManager->replicateCheckpoint() != ReplicationManager::ReplicatedCheckpointStatus::SUCCESS) {
+        make500(response);
         return;
     }
 

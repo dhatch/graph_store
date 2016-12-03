@@ -7,7 +7,7 @@ AddOption(
     help='debug build',
     default=False)
 
-env = Environment(CPPPATH=['#/src', '#/lib/mongoose', '#/lib/jsoncpp/dist/'],
+env = Environment(CPPPATH=['#/src', '#/lib/mongoose', '#/lib/jsoncpp/dist/', '#/gen-cpp'],
                   CXXFLAGS=["--std=c++11"])
 
 Export('env')
@@ -21,6 +21,11 @@ else:
     variant_dir = 'build/release'
 
 env.Append(CXXFLAGS=[opt_flag])
+
+env.Command(
+    '#/gen-cpp/Replication.cpp',
+    '#/src/net/repl.thrift',
+    'thrift --gen cpp $SOURCE')
 
 
 env.Command('#/lib/mongoose/libmongoose.a', [

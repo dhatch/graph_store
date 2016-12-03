@@ -3,14 +3,16 @@
 #include <utility>
 
 #include "db/graph_store.h"
+#include "db/replication_manager.h"
+
 #include "net/hatch_response.h"
 
 #pragma once
 
 class HTTPController : public Mongoose::JsonController {
 public:
-    HTTPController(GraphStore* store, bool loggingEnabled) :
-        store(store), loggingEnabled(loggingEnabled) {};
+    HTTPController(GraphStore* store, ReplicationManager* replManager, bool loggingEnabled) :
+        store(store), replManager(replManager), loggingEnabled(loggingEnabled) {};
 
     void add_node(Mongoose::Request& request, HatchResponse& response);
     void remove_node(Mongoose::Request& request, HatchResponse& response);
@@ -32,5 +34,6 @@ private:
     StatusWith<std::pair<NodeId, NodeId>> getEdgeIds(Mongoose::Request &request, HatchResponse& response);
 
     GraphStore *store;
+    ReplicationManager *replManager;
     bool loggingEnabled;
 };

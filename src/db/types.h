@@ -6,7 +6,7 @@
 #include <unordered_set>
 #include <vector>
 
-using NodeId = uint64_t;
+using NodeId = int64_t;
 
 class Node {
 public:

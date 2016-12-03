@@ -2,13 +2,20 @@
 #include <csignal>
 #include <iostream>
 #include <unistd.h>
+#include <thread>
 
 #include "mongoose/Server.h"
 
 #include "db/graph_store.h"
 #include "db/logged_store.h"
 #include "db/memory_store.h"
+#include "db/replication_manager.h"
+
 #include "net/http_controller.h"
+#include "net/replication_server.h"
+#include "net/replication_outbound.h"
+
+#include "util/stdx/memory.h"
 
 volatile static bool running = true;
 
@@ -29,6 +36,8 @@ static const char *USAGE =
     "Arguments:\n"
     "portnum: The port to accept HTTP commands.\n"
     "devfile (optional): The device file to write to for durability.  If absent, durability is disabled.\n";
+
+static const int RPC_PORT = 9091;
 
 void die_with_usage() {
     std::cerr << USAGE << std::endl;
@@ -80,18 +89,46 @@ int main(int argc, char* argv[])
     srand(time(NULL));
     signal(SIGINT, handle_signal);
 
-    GraphStore *store = nullptr;
+    std::unique_ptr<GraphStore> store;
     if (devPath) {
-        store = new LoggedStore(devPath, format);
+        store = stdx::make_unique<LoggedStore>(devPath, format);
     } else {
-        store = new MemoryStore();
+        store = stdx::make_unique<MemoryStore>();
     }
 
+    ReplicationManager::NodeType type;
+    std::unique_ptr<ReplicationOutbound> replicationOutbound;
+    if (replicationSuccessorIp) {
+        if (isChainReplica) {
+            type = ReplicationManager::NodeType::MID;
+        } else {
+            type = ReplicationManager::NodeType::HEAD;
+        }
+        replicationOutbound = stdx::make_unique<ReplicationOutbound>(
+                replicationSuccessorIp, RPC_PORT);
+    } else {
+        type = ReplicationManager::NodeType::TAIL;
+    }
+
+    ReplicationManager replManager(type, store.get(), replicationOutbound.get());
+
     Mongoose::Server server(port);
-    HTTPController controller(store, devPath != nullptr);
+    HTTPController controller(store.get(), &replManager, devPath != nullptr);
     server.registerController(&controller);
     server.setOption("enable_directory_listing", "false");
+
+    // TODO there is probably something wrong here.
     server.start();
+
+    ReplicationServer replServer(RPC_PORT, store.get(), &replManager,
+            devPath != nullptr);
+    std::thread replServerThread;
+
+    if (type != ReplicationManager::NodeType::HEAD) {
+        replServerThread = std::thread([&]{
+            replServer.start();
+        });
+    }
 
     cout << "Server started on port: " << port << ", routes:" << endl;
     controller.dumpRoutes();
@@ -101,6 +138,10 @@ int main(int argc, char* argv[])
     }
 
     server.stop();
+    if (type != ReplicationManager::NodeType::HEAD) {
+        replServer.stop();
+        replServerThread.join();
+    }
 
     return EXIT_SUCCESS;
 }

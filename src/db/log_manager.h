@@ -27,7 +27,7 @@ public:
      * Represents a log entry.
      */
     struct Entry {
-        Entry(OpCode opcode, uint64_t idA, uint64_t idB) :
+        Entry(OpCode opcode, int64_t idA, int64_t idB) :
             opcode(opcode), idA(idA), idB(idB) {};
 
         bool operator==(const Entry& rhs) const {
@@ -35,8 +35,8 @@ public:
         }
 
         OpCode opcode;
-        uint64_t idA;
-        uint64_t idB;
+        int64_t idA;
+        int64_t idB;
 
         friend std::ostream& operator<<(std::ostream& os, const Entry& entry);
     };

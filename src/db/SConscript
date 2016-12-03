@@ -9,6 +9,7 @@ env.Library(
         'logged_store.cc',
         'log_manager.cc',
         'memory_store.cc',
+        'replication_manager.cc',
         'types.cc',
     ]
 )

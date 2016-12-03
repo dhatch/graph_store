@@ -7,4 +7,7 @@ env.Library(
     source=[
         'http_controller.cc',
         'hatch_response.cc',
+        'replication_server.cc',
+        'replication_outbound.cc',
+        '#/gen-cpp/Replication.cpp'
     ])
