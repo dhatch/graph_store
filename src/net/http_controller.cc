@@ -95,7 +95,7 @@ void HTTPController::add_node(Request& request, HatchResponse& response) {
 
     NodeId nodeId = *status_with_node_id;
 
-    if (!replManager->writesAllowed() || !replManager->replicateAddNode(nodeId)) {
+    if (replManager && (!replManager->writesAllowed() || !replManager->replicateAddNode(nodeId))) {
         make500(response);
         return;
     }
@@ -129,7 +129,7 @@ void HTTPController::remove_node(Request& request, HatchResponse& response) {
         return;
     }
 
-    if (!replManager->writesAllowed() || !replManager->replicateRemoveNode(nodeId)) {
+    if (replManager && (!replManager->writesAllowed() || !replManager->replicateRemoveNode(nodeId))) {
         make500(response);
         return;
     }
@@ -180,7 +180,7 @@ void HTTPController::add_edge(Request& request, HatchResponse& response) {
         return;
     }
 
-    if (!replManager->writesAllowed() || !replManager->replicateAddEdge(nodeAId, nodeBId)) {
+    if (replManager && (!replManager->writesAllowed() || !replManager->replicateAddEdge(nodeAId, nodeBId))) {
         make500(response);
         return;
     }
@@ -221,7 +221,7 @@ void HTTPController::remove_edge(Request& request, HatchResponse& response) {
         return;
     }
 
-    if (!replManager->writesAllowed() || !replManager->replicateRemoveEdge(nodeAId, nodeBId)) {
+    if (replManager && (!replManager->writesAllowed() || !replManager->replicateRemoveEdge(nodeAId, nodeBId))) {
         make500(response);
         return;
     }
@@ -309,7 +309,7 @@ void HTTPController::checkpoint(Mongoose::Request &request, HatchResponse& respo
         return;
     }
 
-    if (replManager->replicateCheckpoint() != ReplicationManager::ReplicatedCheckpointStatus::SUCCESS) {
+    if (replManager && (replManager->replicateCheckpoint() != ReplicationManager::ReplicatedCheckpointStatus::SUCCESS)) {
         make500(response);
         return;
     }

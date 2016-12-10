@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mutex>
+
 #include "db/log_manager.h"
 #include "db/checkpoint_manager.h"
 #include "db/memory_store.h"
@@ -80,4 +82,6 @@ private:
     LogManager _log;
     CheckpointManager _checkpoint;
     MemoryStore _memoryStore;
+
+    mutable std::recursive_mutex _lock;
 };

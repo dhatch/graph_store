@@ -1,6 +1,7 @@
 #include "db/logged_store.h"
 
 #include <iostream>
+#include <mutex>
 
 #include "db/log_manager.h"
 #include "db/memory_store.h"
@@ -24,6 +25,7 @@ LoggedStore::LoggedStore(const char* deviceName, bool formatLog) :
 }
 
 Status LoggedStore::addNode(NodeId nodeId) {
+    std::lock_guard<std::recursive_mutex> guard(_lock);
     Status status = _log.logOperation({LogManager::OpCode::ADD_NODE, nodeId, 0});
     if (!status)
         return status;
@@ -32,6 +34,7 @@ Status LoggedStore::addNode(NodeId nodeId) {
 }
 
 Status LoggedStore::removeNode(NodeId nodeId) {
+    std::lock_guard<std::recursive_mutex> guard(_lock);
     Status status = _log.logOperation({LogManager::OpCode::REMOVE_NODE, nodeId, 0});
     if (!status)
         return status;
@@ -40,15 +43,18 @@ Status LoggedStore::removeNode(NodeId nodeId) {
 }
 
 StatusWith<Node*> LoggedStore::findNode(NodeId nodeId) const {
+    std::lock_guard<std::recursive_mutex> guard(_lock);
     return _memoryStore.findNode(nodeId);
 }
 
 StatusWith<std::pair<Node*, Node*>> LoggedStore::getEdge(NodeId nodeAId,
                                                          NodeId nodeBId) const {
+    std::lock_guard<std::recursive_mutex> guard(_lock);
     return _memoryStore.getEdge(nodeAId, nodeBId);
 }
 
 Status LoggedStore::addEdge(NodeId nodeAId, NodeId nodeBId) {
+    std::lock_guard<std::recursive_mutex> guard(_lock);
     Status status = _log.logOperation({LogManager::OpCode::ADD_EDGE, nodeAId, nodeBId});
     if (!status)
         return status;
@@ -57,6 +63,7 @@ Status LoggedStore::addEdge(NodeId nodeAId, NodeId nodeBId) {
 }
 
 Status LoggedStore::removeEdge(NodeId nodeAId, NodeId nodeBId) {
+    std::lock_guard<std::recursive_mutex> guard(_lock);
     Status status = _log.logOperation({LogManager::OpCode::REMOVE_EDGE, nodeAId, nodeBId});
     if (!status)
         return status;
@@ -65,15 +72,18 @@ Status LoggedStore::removeEdge(NodeId nodeAId, NodeId nodeBId) {
 }
 
 StatusWith<NodeIdList> LoggedStore::getNeighbors(NodeId nodeId) const {
+    std::lock_guard<std::recursive_mutex> guard(_lock);
     return _memoryStore.getNeighbors(nodeId);
 }
 
 StatusWith<uint64_t> LoggedStore::shortestPath(NodeId nodeAId,
                                   NodeId nodeBId) const {
+    std::lock_guard<std::recursive_mutex> guard(_lock);
     return _memoryStore.shortestPath(nodeAId, nodeBId);
 }
 
 Status LoggedStore::checkpoint() {
+    std::lock_guard<std::recursive_mutex> guard(_lock);
     auto status = _checkpoint.performCheckpoint(_log.getGeneration());
     if (!status) {
         // Note the database is not recoverable at this point.
@@ -85,6 +95,7 @@ Status LoggedStore::checkpoint() {
 }
 
 void LoggedStore::recover() {
+    std::lock_guard<std::recursive_mutex> guard(_lock);
     _checkpoint.restoreCheckpoint(_log.getGeneration() - 1);
     LogManager::Reader &reader = _log.readLog();
     while (reader.hasNext()) {

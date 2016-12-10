@@ -6,15 +6,15 @@ NodeId Node::getId() const {
     return _id;
 }
 
-std::unordered_set<Node*> Node::edges() const {
+std::unordered_set<NodeId> Node::edges() const {
     return _edges;
 }
 
-bool Node::addEdge(Node* node) {
+bool Node::addEdge(NodeId node) {
     return _edges.insert(node).second;
 }
 
-bool Node::removeEdge(Node* node) {
+bool Node::removeEdge(NodeId node) {
     auto it = _edges.find(node);
     if (it == _edges.end()) {
         return false;
@@ -24,6 +24,6 @@ bool Node::removeEdge(Node* node) {
     return true;
 }
 
-bool Node::hasEdge(Node* node) const {
+bool Node::hasEdge(NodeId node) const {
     return _edges.find(node) != _edges.end();
 }

@@ -116,8 +116,8 @@ Status CheckpointManager::performCheckpoint(uint64_t generationNumber) {
             writer.writeUint64(nodeIterator->first);
             auto edges = nodeIterator->second->edges();
             writer.writeUint64(edges.size());
-            for (const Node* edge : nodeIterator->second->edges()) {
-                writer.writeUint64(edge->getId());
+            for (const NodeId& edgeId : nodeIterator->second->edges()) {
+                writer.writeUint64(edgeId);
             }
 
             nodeIterator++;
@@ -202,7 +202,7 @@ void CheckpointManager::restoreCheckpoint(uint64_t generationNumber) {
                 status_with_node = memoryStore.findNode(edgeId);
             }
 
-            node->addEdge(*status_with_node);
+            node->addEdge((*status_with_node)->getId());
         }
     }
 }

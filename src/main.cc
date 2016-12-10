@@ -96,38 +96,45 @@ int main(int argc, char* argv[])
         store = stdx::make_unique<MemoryStore>();
     }
 
+    std::unique_ptr<ReplicationManager> replManager = nullptr;
     ReplicationManager::NodeType type;
-    std::unique_ptr<ReplicationOutbound> replicationOutbound;
-    if (replicationSuccessorIp) {
-        if (isChainReplica) {
-            type = ReplicationManager::NodeType::MID;
+    std::unique_ptr<ReplicationOutbound> replicationOutbound = nullptr;
+    if (replicationSuccessorIp || isChainReplica) {
+        if (replicationSuccessorIp) {
+            if (isChainReplica) {
+                type = ReplicationManager::NodeType::MID;
+            } else {
+                type = ReplicationManager::NodeType::HEAD;
+            }
+            replicationOutbound = stdx::make_unique<ReplicationOutbound>(
+                    replicationSuccessorIp, RPC_PORT);
         } else {
-            type = ReplicationManager::NodeType::HEAD;
+            type = ReplicationManager::NodeType::TAIL;
         }
-        replicationOutbound = stdx::make_unique<ReplicationOutbound>(
-                replicationSuccessorIp, RPC_PORT);
-    } else {
-        type = ReplicationManager::NodeType::TAIL;
+        replManager = stdx::make_unique<ReplicationManager>(
+                type, store.get(), replicationOutbound.get());
     }
 
-    ReplicationManager replManager(type, store.get(), replicationOutbound.get());
-
     Mongoose::Server server(port);
-    HTTPController controller(store.get(), &replManager, devPath != nullptr);
+    HTTPController controller(store.get(), replManager.get(), devPath != nullptr);
     server.registerController(&controller);
     server.setOption("enable_directory_listing", "false");
 
     // TODO there is probably something wrong here.
     server.start();
 
-    ReplicationServer replServer(RPC_PORT, store.get(), &replManager,
-            devPath != nullptr);
+    std::unique_ptr<ReplicationServer> replServer = nullptr;
     std::thread replServerThread;
+    if (replManager) {
+        replServer = stdx::make_unique<ReplicationServer>(
+                RPC_PORT, store.get(), replManager.get(),
+                devPath != nullptr);
 
-    if (type != ReplicationManager::NodeType::HEAD) {
-        replServerThread = std::thread([&]{
-            replServer.start();
-        });
+        if (type != ReplicationManager::NodeType::HEAD) {
+            replServerThread = std::thread([&]{
+                replServer->start();
+            });
+        }
     }
 
     cout << "Server started on port: " << port << ", routes:" << endl;
@@ -138,8 +145,8 @@ int main(int argc, char* argv[])
     }
 
     server.stop();
-    if (type != ReplicationManager::NodeType::HEAD) {
-        replServer.stop();
+    if (replServer) {
+        replServer->stop();
         replServerThread.join();
     }
 

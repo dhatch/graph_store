@@ -7,6 +7,7 @@
 #include "db/types.h"
 #include "util/status.h"
 #include "util/stdx/memory.h"
+#include "util/assert.h"
 
 Status MemoryStore::addNode(NodeId nodeId) {
     std::lock_guard<std::recursive_mutex> lock(_memoryStoreMutex);
@@ -28,8 +29,10 @@ Status MemoryStore::removeNode(NodeId nodeId) {
     node = it->second.get();
 
     // Clean up edges
-    for (auto&& neighbor : node->edges()) {
-        neighbor->removeEdge(node);
+    for (const auto& neighborId : node->edges()) {
+        auto neighbor = _nodes.find(neighborId);
+        invariant(neighbor != _nodes.end());
+        neighbor->second->removeEdge(nodeId);
     }
 
     _nodes.erase(it);
@@ -70,12 +73,12 @@ StatusWith<std::pair<Node*, Node*>> MemoryStore::getEdge(NodeId nodeAId, NodeId 
     }
 
     // Check that the edge exists.
-    if (nodeA->hasEdge(nodeB)) {
-        invariant(nodeB->hasEdge(nodeA));
+    if (nodeA->hasEdge(nodeBId)) {
+        invariant(nodeB->hasEdge(nodeAId));
         return {{nodeA, nodeB}};
     }
 
-    invariant(!nodeB->hasEdge(nodeA));
+    invariant(!nodeB->hasEdge(nodeAId));
     return StatusCode::DOES_NOT_EXIST;
 }
 
@@ -101,12 +104,12 @@ Status MemoryStore::addEdge(NodeId nodeAId, NodeId nodeBId) {
         return status.getCode();
     }
 
-    if (!nodeA->addEdge(nodeB)) {
-        invariant(!nodeB->addEdge(nodeA));
+    if (!nodeA->addEdge(nodeBId)) {
+        invariant(!nodeB->addEdge(nodeAId));
         return StatusCode::NO_ACTION;
     }
 
-    invariant(nodeB->addEdge(nodeA));
+    invariant(nodeB->addEdge(nodeAId));
 
     return StatusCode::SUCCESS;
 }
@@ -122,12 +125,12 @@ Status MemoryStore::removeEdge(NodeId nodeAId, NodeId nodeBId) {
     Node* nodeA = status->first;
     Node* nodeB = status->second;
 
-    if (!nodeA->removeEdge(nodeB)) {
-        invariant(!nodeB->removeEdge(nodeA));
+    if (!nodeA->removeEdge(nodeBId)) {
+        invariant(!nodeB->removeEdge(nodeAId));
         return StatusCode::DOES_NOT_EXIST;
     }
 
-    invariant(nodeB->removeEdge(nodeA));
+    invariant(nodeB->removeEdge(nodeAId));
 
     return StatusCode::SUCCESS;
 }
@@ -143,8 +146,8 @@ StatusWith<NodeIdList> MemoryStore::getNeighbors(NodeId nodeId) const {
     const Node* node = *status_with_node;
 
     NodeIdList result;
-    for (const Node* n : node->edges()) {
-        result.push_back(n->getId());
+    for (const NodeId& nId : node->edges()) {
+        result.push_back(nId);
     }
 
     return result;
@@ -182,10 +185,14 @@ StatusWith<uint64_t> MemoryStore::shortestPath(NodeId nodeAId, NodeId nodeBId) c
             }
 
             // Add all the edges of n to nextSearch.
-            for (const Node* edge : n->edges()) {
-                if (!found.insert(edge->getId()).second) {
+            for (const NodeId& edgeId : n->edges()) {
+                if (!found.insert(edgeId).second) {
                     continue;
                 }
+
+                auto edgeIt = _nodes.find(edgeId);
+                invariant(edgeIt != _nodes.end());
+                const Node *edge = edgeIt->second.get();
                 nextSearch.push_back(edge);
             }
         }
