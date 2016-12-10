@@ -65,7 +65,7 @@ struct LogBlock {
 
     void init(uint64_t generation) {
         __magic = BLOCK_MAGIC;
-        generation = generation;
+        this->generation = generation;
         nEntries = 0;
     }
 
@@ -256,6 +256,12 @@ std::ostream& operator<<(std::ostream& os, const LogManager::Entry& entry) {
             break;
         case LogManager::OpCode::REMOVE_EDGE:
             str = "REMOVE_EDGE";
+            break;
+        case LogManager::OpCode::ADD_EDGE_PART:
+            str = "ADD_EDGE_PART";
+            break;
+        case LogManager::OpCode::REMOVE_EDGE_PART:
+            str = "REMOVE_EDGE_PART";
             break;
     }
 

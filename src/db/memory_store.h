@@ -54,6 +54,23 @@ public:
     virtual Status removeEdge(NodeId nodeAId, NodeId nodeBId) override;
 
     /**
+     * Get an edge part between 'nodeLocalId' and 'nodeRemoteId'.
+     */
+    virtual Status getEdgePart(NodeId nodeLocalId, NodeId nodeRemoteId) const override;
+
+    /**
+     * Adds an edge part between `nodeLocalId` and `nodeRemoteId`.
+     */
+    virtual Status addEdgePart(NodeId nodeLocalId, NodeId nodeRemoteId) override;
+
+    /**
+     * Remove an edge part between 'nodeLocalId' and 'nodeRemoteId'.
+     *
+     * Precondition: 'nodeLocalId' is on this partition.
+     */
+    virtual Status removeEdgePart(NodeId nodeLocalId, NodeId nodeRemoteId) override;
+
+    /**
      * Find the neighbors of 'nodeId'.
      */
     virtual StatusWith<NodeIdList> getNeighbors(NodeId nodeId) const override;

@@ -44,6 +44,25 @@ public:
      */
     virtual Status removeEdge(NodeId nodeAId, NodeId nodeBId) = 0;
 
+    // An edge part is a one-way edge between two nodes.
+
+    /**
+     * Get an edge part between 'nodeLocalId' and 'nodeRemoteId'.
+     */
+    virtual Status getEdgePart(NodeId nodeLocalId, NodeId nodeRemoteId) const = 0;
+
+    /**
+     * Adds an edge part between `nodeLocalId` and `nodeRemoteId`.
+     */
+    virtual Status addEdgePart(NodeId nodeLocalId, NodeId nodeRemoteId) = 0;
+
+    /**
+     * Remove an edge part between 'nodeLocalId' and 'nodeRemoteId'.
+     *
+     * Precondition: 'nodeLocalId' is on this partition.
+     */
+    virtual Status removeEdgePart(NodeId nodeLocalId, NodeId nodeRemoteId) = 0;
+
     /**
      * Find the neighbors of 'nodeId'.
      */

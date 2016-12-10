@@ -8,7 +8,7 @@ AddOption(
     default=False)
 
 env = Environment(CPPPATH=['#/src', '#/lib/mongoose', '#/lib/jsoncpp/dist/', '#/gen-cpp'],
-                  CXXFLAGS=["--std=c++11"])
+                  CXXFLAGS=["--std=c++11", "-Wall", "-Werror"])
 
 Export('env')
 

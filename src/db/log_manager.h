@@ -19,8 +19,10 @@ public:
     enum class OpCode : uint32_t {
         ADD_NODE,
         ADD_EDGE,
+        ADD_EDGE_PART,
         REMOVE_NODE,
-        REMOVE_EDGE
+        REMOVE_EDGE,
+        REMOVE_EDGE_PART
     };
 
     /**

@@ -135,6 +135,66 @@ Status MemoryStore::removeEdge(NodeId nodeAId, NodeId nodeBId) {
     return StatusCode::SUCCESS;
 }
 
+Status MemoryStore::addEdgePart(NodeId nodeLocalId, NodeId nodeRemoteId) {
+    std::lock_guard<std::recursive_mutex> lock(_memoryStoreMutex);
+
+    Node* nodeLocal = nullptr;
+    if (nodeLocalId == nodeRemoteId) {
+        return StatusCode::INVALID;
+    }
+
+    if (auto status = findNode(nodeLocalId)) {
+        nodeLocal = *status;
+    } else {
+        return status.getCode();
+    }
+
+    if (!nodeLocal->addEdge(nodeRemoteId)) {
+        return StatusCode::NO_ACTION;
+    }
+
+    return StatusCode::SUCCESS;
+}
+
+Status MemoryStore::removeEdgePart(NodeId nodeLocalId, NodeId nodeRemoteId) {
+    std::lock_guard<std::recursive_mutex> lock(_memoryStoreMutex);
+
+    auto status = getEdgePart(nodeLocalId, nodeRemoteId);
+    if (!status) {
+        return status;
+    }
+
+    Node* nodeLocal;
+    if (auto status = findNode(nodeLocalId)) {
+       nodeLocal = *status;
+    } else {
+       return status.getCode();
+    }
+
+    if (!nodeLocal->removeEdge(nodeRemoteId)) {
+        return StatusCode::DOES_NOT_EXIST;
+    }
+
+    return StatusCode::SUCCESS;
+}
+
+Status MemoryStore::getEdgePart(NodeId nodeLocalId, NodeId nodeRemoteId) const {
+    std::lock_guard<std::recursive_mutex> lock(_memoryStoreMutex);
+
+    const Node* nodeLocal;
+    if (auto status = findNode(nodeLocalId)) {
+        nodeLocal = *status;
+    } else {
+        return status.getCode();
+    }
+
+    if (nodeLocal->hasEdge(nodeRemoteId)) {
+        return StatusCode::SUCCESS;
+    } else {
+        return StatusCode::DOES_NOT_EXIST;
+    }
+}
+
 StatusWith<NodeIdList> MemoryStore::getNeighbors(NodeId nodeId) const {
     std::lock_guard<std::recursive_mutex> lock(_memoryStoreMutex);
 

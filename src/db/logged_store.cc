@@ -71,6 +71,29 @@ Status LoggedStore::removeEdge(NodeId nodeAId, NodeId nodeBId) {
     return _memoryStore.removeEdge(nodeAId, nodeBId);
 }
 
+Status LoggedStore::addEdgePart(NodeId nodeLocalId, NodeId nodeRemoteId) {
+    std::lock_guard<std::recursive_mutex> guard(_lock);
+    Status status = _log.logOperation({LogManager::OpCode::ADD_EDGE_PART, nodeLocalId, nodeRemoteId});
+    if (!status)
+        return status;
+
+    return _memoryStore.addEdgePart(nodeLocalId, nodeRemoteId);
+}
+
+Status LoggedStore::removeEdgePart(NodeId nodeLocalId, NodeId nodeRemoteId) {
+    std::lock_guard<std::recursive_mutex> guard(_lock);
+    Status status = _log.logOperation({LogManager::OpCode::REMOVE_EDGE_PART, nodeLocalId, nodeRemoteId});
+    if (!status)
+        return status;
+
+    return _memoryStore.removeEdgePart(nodeLocalId, nodeRemoteId);
+}
+
+Status LoggedStore::getEdgePart(NodeId nodeLocalId, NodeId nodeRemoteId) const {
+    std::lock_guard<std::recursive_mutex> guard(_lock);
+    return _memoryStore.getEdgePart(nodeLocalId, nodeRemoteId);
+}
+
 StatusWith<NodeIdList> LoggedStore::getNeighbors(NodeId nodeId) const {
     std::lock_guard<std::recursive_mutex> guard(_lock);
     return _memoryStore.getNeighbors(nodeId);
@@ -112,6 +135,11 @@ void LoggedStore::recover() {
                 break;
             case LogManager::OpCode::REMOVE_EDGE:
                 _memoryStore.removeEdge(entry.idA, entry.idB);
+            case LogManager::OpCode::ADD_EDGE_PART:
+                _memoryStore.addEdgePart(entry.idA, entry.idB);
+                break;
+            case LogManager::OpCode::REMOVE_EDGE_PART:
+                _memoryStore.removeEdgePart(entry.idA, entry.idB);
                 break;
         }
     }
