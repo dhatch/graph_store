@@ -95,6 +95,11 @@ void HTTPController::add_node(Request& request, HatchResponse& response) {
 
     NodeId nodeId = *status_with_node_id;
 
+    if (partManager && partConfig.target(nodeId) != partConfig.us()) {
+        make400(response);
+        return;
+    }
+
     if (replManager && (!replManager->writesAllowed() || !replManager->replicateAddNode(nodeId))) {
         make500(response);
         return;
@@ -129,6 +134,11 @@ void HTTPController::remove_node(Request& request, HatchResponse& response) {
         return;
     }
 
+    if (partManager) {
+        make400(response);
+        return;
+    }
+
     if (replManager && (!replManager->writesAllowed() || !replManager->replicateRemoveNode(nodeId))) {
         make500(response);
         return;
@@ -154,10 +164,49 @@ void HTTPController::get_node(Request& request, HatchResponse& response) {
     }
 
     NodeId nodeId = *status_with_node_id;
+    if (partManager && partConfig.target(nodeId) != partConfig.us()) {
+        make400(response);
+        return;
+    }
 
     auto status = store->findNode(nodeId);
 
     response["in_graph"] = status.getCode() == StatusCode::SUCCESS;
+    return;
+}
+
+bool HTTPController::isPartitionedEdgeOp(NodeId nodeAId, NodeId nodeBId) const {
+    return partConfig.target(nodeAId) != partConfig.us() || partConfig.target(nodeBId) != partConfig.us();
+}
+
+void HTTPController::add_edge_partition(NodeId nodeAId, NodeId nodeBId, HatchResponse &response) {
+    StatusWith<std::pair<NodeId, NodeId>> edge = partManager->getEdgePart(nodeAId, nodeBId);
+    if (!edge) {
+        make400(response);
+        return;
+    }
+
+    auto edgeExists = store->getEdgePart(edge->first, edge->second);
+    if (edgeExists) {
+        make204(response);
+        return;
+    }
+
+    if (nodeAId == nodeBId) {
+        make400(response);
+        return;
+    }
+
+    auto status = partManager->addEdge(edge->first, edge->second);
+    if (!status) {
+        make400(response);
+        return;
+    }
+
+    invariant(store->addEdgePart(edge->first, edge->second));
+
+    response["node_a_id"] = nodeAId;
+    response["node_b_id"] = nodeBId;
     return;
 }
 
@@ -169,6 +218,12 @@ void HTTPController::add_edge(Request& request, HatchResponse& response) {
 
     NodeId nodeAId = status_with_node_ids->first;
     NodeId nodeBId = status_with_node_ids->second;
+
+    // Handle partitioning logic
+    if (partManager && isPartitionedEdgeOp(nodeAId, nodeBId)) {
+        add_edge_partition(nodeAId, nodeBId, response);
+        return;
+    }
 
     if (!store->findNode(nodeAId)) {
         make400(response);
@@ -202,6 +257,37 @@ void HTTPController::add_edge(Request& request, HatchResponse& response) {
     return;
 }
 
+void HTTPController::remove_edge_partition(NodeId nodeAId, NodeId nodeBId, HatchResponse &response) {
+    StatusWith<std::pair<NodeId, NodeId>> edge = partManager->getEdgePart(nodeAId, nodeBId);
+    if (!edge) {
+        make400(response);
+        return;
+    }
+
+    auto edgeExists = store->getEdgePart(edge->first, edge->second);
+    if (!edgeExists) {
+        make400(response);
+        return;
+    }
+
+    if (nodeAId == nodeBId) {
+        make400(response);
+        return;
+    }
+
+    auto status = partManager->removeEdge(edge->first, edge->second);
+    if (!status) {
+        make400(response);
+        return;
+    }
+
+    invariant(store->removeEdgePart(edge->first, edge->second));
+
+    response["node_a_id"] = nodeAId;
+    response["node_b_id"] = nodeBId;
+    return;
+}
+
 void HTTPController::remove_edge(Request& request, HatchResponse& response) {
     auto status_with_node_ids  = getEdgeIds(request, response);
     if (!status_with_node_ids) {
@@ -210,6 +296,12 @@ void HTTPController::remove_edge(Request& request, HatchResponse& response) {
 
     NodeId nodeAId = status_with_node_ids->first;
     NodeId nodeBId = status_with_node_ids->second;
+
+    // Handle partitioning logic
+    if (partManager && isPartitionedEdgeOp(nodeAId, nodeBId)) {
+        remove_edge_partition(nodeAId, nodeBId, response);
+        return;
+    }
 
     if (!store->findNode(nodeAId)) {
         make400(response);
@@ -249,7 +341,18 @@ void HTTPController::get_edge(Request& request, HatchResponse& response) {
     NodeId nodeAId = status_with_node_ids->first;
     NodeId nodeBId = status_with_node_ids->second;
 
-    auto status = store->getEdge(nodeAId, nodeBId);
+    Status status(StatusCode::SUCCESS);
+    if (partManager && isPartitionedEdgeOp(nodeAId, nodeBId)) {
+        auto status_with_edge = partManager->getEdgePart(nodeAId, nodeBId);
+        if (!status_with_edge) {
+            make400(response);
+            return;
+        }
+
+        status = store->getEdgePart(status_with_edge->first, status_with_edge->second);
+    } else {
+        status = store->getEdge(nodeAId, nodeBId);
+    }
 
     response["in_graph"] = status.getCode() == StatusCode::SUCCESS;
 
@@ -263,6 +366,11 @@ void HTTPController::get_neighbors(Request& request, HatchResponse& response) {
     }
 
     NodeId nodeId = *status_with_node_id;
+
+    if (partManager && partConfig.target(nodeId) != partConfig.us()) {
+        make400(response);
+        return;
+    }
 
     auto status = store->getNeighbors(nodeId);
     if (!status) {
@@ -289,6 +397,11 @@ void HTTPController::shortest_path(Request& request, HatchResponse& response) {
     NodeId nodeAId = status_with_node_ids->first;
     NodeId nodeBId = status_with_node_ids->second;
 
+    if (partManager) {
+        make400(response);
+        return;
+    }
+
     auto status = store->shortestPath(nodeAId, nodeBId);
     if (status == StatusCode::NO_ACTION) {
         make204(response);
@@ -306,6 +419,11 @@ void HTTPController::shortest_path(Request& request, HatchResponse& response) {
 void HTTPController::checkpoint(Mongoose::Request &request, HatchResponse& response) {
     if (!loggingEnabled) {
         make501(response);
+        return;
+    }
+
+    if (partManager) {
+        make400(response);
         return;
     }
 

@@ -40,7 +40,14 @@ enum class StatusCode {
     /**
      * No space remaining.
      */
-    NO_SPACE
+    NO_SPACE,
+
+    /**
+     * This is the wrong partition
+     */
+    WRONG_PARTITION,
+
+    PARTITION_FAIL
 };
 
 class Status {

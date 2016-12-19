@@ -11,6 +11,8 @@ env.Library(
         'memory_store.cc',
         'replication_manager.cc',
         'types.cc',
+        'partition/partition_config.cc',
+        'partition/partition_manager.cc'
     ]
 )
 

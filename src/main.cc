@@ -11,6 +11,10 @@
 #include "db/memory_store.h"
 #include "db/replication_manager.h"
 
+#include "db/partition/partition_config.h"
+#include "db/partition/partition_manager.h"
+#include "net/partition_server.h"
+
 #include "net/http_controller.h"
 #include "net/replication_server.h"
 #include "net/replication_outbound.h"
@@ -50,8 +54,17 @@ int main(int argc, char* argv[])
     bool isChainReplica = false;
     char *replicationSuccessorIp = nullptr;
 
+    int partNumber = -1;
+    std::vector<std::string> addresses;
+
+    int port = std::atoi(argv[optind++]);
+    if (port == 0) {
+        std::cerr << "Invalid port number." << std::endl;
+        die_with_usage();
+    }
+
     int opt;
-    while ((opt = getopt(argc, argv, "fcb:")) != -1) {
+    while ((opt = getopt(argc, argv, "fcb:p:l")) != -1) {
         switch (opt) {
             case 'f':
                 format = true;
@@ -62,39 +75,34 @@ int main(int argc, char* argv[])
             case 'b':
                 replicationSuccessorIp = optarg;
                 break;
+            case 'p':
+                partNumber = std::atoi(optarg) - 1;
+                if (partNumber == -1) {
+                    std::cerr << "Invalid part number." << std::endl;
+                    die_with_usage();
+                }
+                break;
+            case 'l':
+                break;
             case '?':
             default:
                 die_with_usage();
         }
     }
 
-    int port = 0;
-    const char *devPath = nullptr;
-
-    if (optind >= argc) {
-        std::cerr << "Missing port number." << std::endl;
-        die_with_usage();
+    while (optind < argc) {
+        addresses.emplace_back(argv[optind++]);
     }
 
-    port = std::atoi(argv[optind++]);
-    if (port == 0) {
-        std::cerr << "Invalid port number." << std::endl;
-        die_with_usage();
-    }
-
-    if (optind < argc) {
-        devPath = argv[optind];
+    for (auto addr : addresses) {
+        std::cerr << addr << std::endl;
     }
 
     srand(time(NULL));
     signal(SIGINT, handle_signal);
 
     std::unique_ptr<GraphStore> store;
-    if (devPath) {
-        store = stdx::make_unique<LoggedStore>(devPath, format);
-    } else {
-        store = stdx::make_unique<MemoryStore>();
-    }
+    store = stdx::make_unique<MemoryStore>();
 
     std::unique_ptr<ReplicationManager> replManager = nullptr;
     ReplicationManager::NodeType type;
@@ -115,8 +123,11 @@ int main(int argc, char* argv[])
                 type, store.get(), replicationOutbound.get());
     }
 
+    PartitionConfig config(addresses, partNumber);
+    PartitionManager partitionManager(config);
+
     Mongoose::Server server(port);
-    HTTPController controller(store.get(), replManager.get(), devPath != nullptr);
+    HTTPController controller(store.get(), replManager.get(), config, &partitionManager, false);
     server.registerController(&controller);
     server.setOption("enable_directory_listing", "false");
 
@@ -128,13 +139,29 @@ int main(int argc, char* argv[])
     if (replManager) {
         replServer = stdx::make_unique<ReplicationServer>(
                 RPC_PORT, store.get(), replManager.get(),
-                devPath != nullptr);
+                false);
 
         if (type != ReplicationManager::NodeType::HEAD) {
             replServerThread = std::thread([&]{
                 replServer->start();
             });
         }
+    }
+
+    std::unique_ptr<PartitionServer> partServer = nullptr;
+    std::thread partitionServerThread;
+    if (partNumber != -1) {
+        const std::string& ip = config.partitions()[config.us()];
+        auto pos = ip.find_last_of(':');
+        if (pos == std::string::npos) {
+            die_with_usage();
+        }
+
+        partServer = stdx::make_unique<PartitionServer>(ip.substr(0, pos),
+                std::atoi(ip.substr(pos + 1).c_str()), store.get());
+        partitionServerThread = std::thread([&]{
+            partServer->start();
+        });
     }
 
     cout << "Server started on port: " << port << ", routes:" << endl;
@@ -148,6 +175,11 @@ int main(int argc, char* argv[])
     if (replServer) {
         replServer->stop();
         replServerThread.join();
+    }
+
+    if (partServer) {
+        partServer->stop();
+        partitionServerThread.join();
     }
 
     return EXIT_SUCCESS;

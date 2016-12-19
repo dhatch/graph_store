@@ -27,6 +27,11 @@ env.Command(
     '#/src/net/repl.thrift',
     'thrift --gen cpp $SOURCE')
 
+env.Command(
+    '#/gen-cpp/Partition.cpp',
+    '#/src/net/partition.thrift',
+    'thrift --gen cpp $SOURCE')
+
 
 env.Command('#/lib/mongoose/libmongoose.a', [
     Glob('#/lib/mongoose/mongoose/*'),

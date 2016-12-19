@@ -9,5 +9,8 @@ env.Library(
         'hatch_response.cc',
         'replication_server.cc',
         'replication_outbound.cc',
-        '#/gen-cpp/Replication.cpp'
+        'partition_server.cc',
+        'partition_outbound.cc',
+        '#/gen-cpp/Replication.cpp',
+        '#/gen-cpp/Partition.cpp'
     ])
