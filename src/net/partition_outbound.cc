@@ -16,7 +16,6 @@ PartitionOutbound::PartitionOutbound(std::string hostname, int port) : _hostname
     boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(_transport));
 
     _client = stdx::make_unique<PartitionClient>(protocol);
-    _transport->open();
 }
 
 PartitionOutbound::PartitionOutbound(PartitionOutbound&& other) : _hostname(other._hostname),
@@ -24,14 +23,19 @@ PartitionOutbound::PartitionOutbound(PartitionOutbound&& other) : _hostname(othe
 }
 
 PartitionOutbound::~PartitionOutbound() {
-    _transport->close();
 }
 
 bool PartitionOutbound::addEdgePart(NodeId nodeLocalId, NodeId nodeRemoteId) {
-    return _client->addEdgePart(nodeLocalId, nodeRemoteId);
+    _transport->open();
+    auto res = _client->addEdgePart(nodeLocalId, nodeRemoteId);
+    _transport->close();
+    return res;
 }
 
 
 bool PartitionOutbound::removeEdgePart(NodeId nodeLocalId, NodeId nodeRemoteId) {
-    return _client->removeEdgePart(nodeLocalId, nodeRemoteId);
+    _transport->open();
+    auto res = _client->removeEdgePart(nodeLocalId, nodeRemoteId);
+    _transport->close();
+    return res;
 }
